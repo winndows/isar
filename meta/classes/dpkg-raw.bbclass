@@ -5,7 +5,7 @@
 
 inherit dpkg
 
-D = "${WORKDIR}/image"
+D = "${S}"
 
 # Populate folder that will be picked up as package
 do_install() {
@@ -22,10 +22,4 @@ do_prepare_build() {
 		sed 's:^./::' > ${S}/debian/${PN}.install
 
 	deb_debianize
-
-	cat <<EOF >> ${S}/debian/rules
-
-override_dh_install:
-	dh_install --sourcedir=${PP}/image
-EOF
 }
