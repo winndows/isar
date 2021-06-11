@@ -24,14 +24,26 @@ ifneq (,$(findstring 86,$(DEB_HOST_GNU_CPU)))
 export ARCH=x86
 endif
 
+# Custom kernels contain the build folder directly.
+KDIR := $(shell dpkg -L linux-headers-${KERNEL_NAME} | grep "/lib/modules/.*/build")
+ifeq ($(KDIR),)
+# Debian kernels install that folder indirectly via a dependency.
+KERNEL_DEP := $(shell dpkg-query -W -f '$${Depends}' linux-headers-${KERNEL_NAME} | sed 's/.*\(linux-headers-[[:graph:]]*\).*/\1/')
+KDIR := $(shell dpkg -L $(KERNEL_DEP) | grep "/lib/modules/.*/build")
+endif
+
+# With sbuild `dh clean` is called before chroot's apt database updated. So,
+# KDIR is empty at that moment and the override causes error. Will skip it.
+ifneq ($(KDIR),)
 override_dh_auto_clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
+endif
 
 override_dh_auto_build:
 	$(MAKE) -C $(KDIR) M=$(PWD) modules
 
 override_dh_auto_install:
-	$(MAKE) -C $(KDIR) M=$(PWD) INSTALL_MOD_PATH=$(PWD)/debian/$(PN) modules_install
+	$(MAKE) -C $(KDIR) M=$(PWD) INSTALL_MOD_PATH=$(PWD)/debian/${PN} modules_install
 
 %:
 	CFLAGS= LDFLAGS= dh $@ --parallel
