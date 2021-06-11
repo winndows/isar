@@ -25,13 +25,14 @@ APTSRCS_INIT = "${WORKDIR}/apt-sources-init"
 DISTRO_BOOTSTRAP_KEYFILES = ""
 THIRD_PARTY_APT_KEYFILES = ""
 DEPLOY_ISAR_BOOTSTRAP ?= ""
-DISTRO_BOOTSTRAP_BASE_PACKAGES = "locales"
+DISTRO_BOOTSTRAP_BASE_PACKAGES = "locales,fakeroot,build-essential,debhelper"
 DISTRO_BOOTSTRAP_BASE_PACKAGES_append_gnupg = ",gnupg"
 DISTRO_BOOTSTRAP_BASE_PACKAGES_append_https-support = "${@https_support(d)}"
 DISTRO_VARS_PREFIX ?= "${@'HOST_' if d.getVar('BOOTSTRAP_FOR_HOST') == '1' else ''}"
 BOOTSTRAP_DISTRO = "${@d.getVar('HOST_DISTRO' if d.getVar('BOOTSTRAP_FOR_HOST') == '1' else 'DISTRO')}"
 
 inherit deb-dl-dir
+inherit sbuild
 
 python () {
     distro_bootstrap_keys = (d.getVar("DISTRO_BOOTSTRAP_KEYS") or "").split()
@@ -397,6 +398,13 @@ EOSUDO
 }
 
 addtask bootstrap before do_build after do_generate_keyrings
+
+do_schroot_config() {
+    schroot_create_configs
+}
+
+addtask schroot_config before do_bootstrap after do_generate_keyrings
+# TODO: remove configs from /etc/schroot
 
 CLEANFUNCS = "clean_deploy"
 clean_deploy() {
