@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+inherit sbuild
 inherit buildchroot
 inherit debianize
 inherit terminal
@@ -13,6 +14,8 @@ inherit deb-dl-dir
 DEPENDS ?= ""
 
 DEPENDS_append_riscv64 = "${@' crossbuild-essential-riscv64' if d.getVar('ISAR_CROSS_COMPILE', True) == '1' and d.getVar('PN') != 'crossbuild-essential-riscv64' else ''}"
+
+ISAR_APT_REPO ?= "deb [trusted=yes] file:///home/builder/${PN}/isar-apt/${DISTRO}-${DISTRO_ARCH}/apt/${DISTRO} ${DEBDISTRONAME} main"
 
 python do_adjust_git() {
     import subprocess
@@ -196,6 +199,14 @@ dpkg_undo_mounts() {
     sudo rmdir ${BUILDROOT}
 }
 
+do_prepare_build_append() {
+    # Make a local copy of isar-apt repo that is not affected by other parallel builds
+    mkdir -p ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}
+    rm -rf ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}/*
+    cp -Rl ${REPO_ISAR_DIR} ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}
+}
+do_prepare_build[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
+
 # Placeholder for actual dpkg_runbuild() implementation
 dpkg_runbuild() {
     die "This should never be called, overwrite it in your derived class"
@@ -238,6 +249,8 @@ python do_dpkg_build_setscene() {
 
 addtask dpkg_build_setscene
 do_dpkg_build_setscene[dirs] += "${S}/.."
+
+do_dpkg_build[depends] = "${SCHROOT_DEP}"
 
 KEEP_INSTALLED_ON_CLEAN ?= "0"
 
