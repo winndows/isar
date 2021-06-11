@@ -22,8 +22,9 @@ AUTOLOAD ?= ""
 inherit dpkg
 
 TEMPLATE_FILES = "debian/control.tmpl \
-                  debian/changelog.tmpl"
-TEMPLATE_VARS += "KERNEL_NAME"
+                  debian/changelog.tmpl \
+                  debian/rules.tmpl"
+TEMPLATE_VARS += "KERNEL_NAME PN"
 
 do_prepare_build() {
     cp -r ${WORKDIR}/debian ${S}/
@@ -31,18 +32,4 @@ do_prepare_build() {
     for module in "${AUTOLOAD}"; do
         echo "echo $module >> /etc/modules" >> ${S}/debian/postinst
     done
-}
-
-dpkg_runbuild_prepend() {
-    # Custom kernels contain the build folder directly.
-    export KDIR=$(dpkg -L --root=${BUILDCHROOT_DIR} linux-headers-${KERNEL_NAME} | \
-                  grep "/lib/modules/.*/build")
-    if [ -z "$KDIR" ]; then
-        # Debian kernels install that folder indirectly via a dependency.
-        KERNEL_DEP=$(dpkg-query -W -f '${Depends}' --admindir=${BUILDCHROOT_DIR}/var/lib/dpkg \
-                     linux-headers-${KERNEL_NAME} | sed 's/.*\(linux-headers-[[:graph:]]*\).*/\1/')
-        export KDIR=$(dpkg -L --root=${BUILDCHROOT_DIR} ${KERNEL_DEP} | \
-                      grep "/lib/modules/.*/build")
-    fi
-    export PN=${PN}
 }
