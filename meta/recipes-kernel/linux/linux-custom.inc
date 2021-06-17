@@ -161,9 +161,9 @@ dpkg_configure_kernel() {
 		(cd ${WORKDIR} && cp ${src_frags} ${S}/debian/fragments/)
 	fi
 
-	sudo -E chroot --userspec=$(id -u):$(id -g) ${BUILDCHROOT_DIR} sh -c " \
+	SBUILD_PREBUILD="                                                      \
 		export ARCH=${KERNEL_ARCH} &&                                  \
-		cd ${PP}/${PPS} &&                                             \
+		cd %p &&                                                       \
 		make O=${KERNEL_BUILD_DIR} ${config_target} &&                 \
 		./scripts/kconfig/merge_config.sh                              \
 			-O ${KERNEL_BUILD_DIR}/                                \
