@@ -125,6 +125,9 @@ do_prepare_build_prepend() {
 	# remove templates from the source tree
 	find ${S}/debian -name *.tmpl | xargs rm -f
 
+	# restore execute permissions
+	chmod a+x ${S}/debian/rules
+
 	# rename install/remove hooks to match user-specified name for our linux-image package
 	mv ${S}/debian/linux-image.postinst ${S}/debian/linux-image-${KERNEL_NAME_PROVIDED}.postinst
 	mv ${S}/debian/linux-image.postrm ${S}/debian/linux-image-${KERNEL_NAME_PROVIDED}.postrm
@@ -164,9 +167,9 @@ dpkg_configure_kernel() {
 		(cd ${WORKDIR} && cp ${src_frags} ${S}/debian/fragments/)
 	fi
 
-	sudo -E chroot --userspec=$(id -u):$(id -g) ${BUILDCHROOT_DIR} sh -c " \
+	SBUILD_PREBUILD="                                                      \
 		export ARCH=${KERNEL_ARCH} &&                                  \
-		cd ${PP}/${PPS} &&                                             \
+		cd %p &&                                                       \
 		make O=${KERNEL_BUILD_DIR} ${config_target} &&                 \
 		./scripts/kconfig/merge_config.sh                              \
 			-O ${KERNEL_BUILD_DIR}/                                \

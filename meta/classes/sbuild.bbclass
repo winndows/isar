@@ -19,7 +19,7 @@ python __anonymous() {
         d.setVar('SBUILD_HOST_ARCH', d.getVar('HOST_ARCH'))
 }
 
-SBUILD_CHROOT ?= "${DEBDISTRONAME}-${SCHROOT_USER}-${DISTRO}-${SBUILD_HOST_ARCH}"
+SBUILD_CHROOT ?= "${DEBDISTRONAME}-${SCHROOT_USER}-${@os.getpid()}"
 SBUILD_CHROOT_RW ?= "${SBUILD_CHROOT}-rw"
 
 SBUILD_CONF_DIR ?= "${SCHROOT_CONF}/${SBUILD_CHROOT}"
@@ -102,6 +102,7 @@ sbuild_export() {
 }
 
 schroot_install() {
+    schroot_create_configs
     APTS="$1"
     #TODO deb_dl_dir_import "${BUILDCHROOT_DIR}" "${distro}"
     schroot -d / -c ${SBUILD_CHROOT_RW} -u root -- \
@@ -111,35 +112,34 @@ schroot_install() {
     schroot -d / -c ${SBUILD_CHROOT_RW} -u root -- \
         apt install -y -o Debug::pkgProblemResolver=yes \
                     --no-install-recommends ${APTS}
+    schroot_delete_configs
 }
 
 insert_mounts() {
     sudo -s <<'EOSUDO'
-        ( flock 9
         set -e
         for mp in ${SCHROOT_MOUNTS}; do
             FSTAB_LINE="${mp%%:*} ${mp#*:} none rw,bind 0 0"
             grep -qxF "${FSTAB_LINE}" ${SBUILD_CONF_DIR}/fstab || \
                 echo "${FSTAB_LINE}" >> ${SBUILD_CONF_DIR}/fstab
         done
-        ) 9>'${SCHROOT_LOCKFILE}'
 EOSUDO
 }
 
 remove_mounts() {
     sudo -s <<'EOSUDO'
-        ( flock 9
         set -e
         for mp in ${SCHROOT_MOUNTS}; do
             FSTAB_LINE="${mp%%:*} ${mp#*:} none rw,bind 0 0"
             sed -i "\|${FSTAB_LINE}|d" ${SBUILD_CONF_DIR}/fstab
         done
-        ) 9>'${SCHROOT_LOCKFILE}'
 EOSUDO
 }
 
 schroot_run() {
+    schroot_create_configs
     insert_mounts
     schroot $@
     remove_mounts
+    schroot_delete_configs
 }

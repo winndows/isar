@@ -36,9 +36,13 @@ dpkg_runbuild() {
     E="${@ isar_export_proxies(d)}"
     export PARALLEL_MAKE="${PARALLEL_MAKE}"
 
+    schroot_create_configs
+
     sbuild -A -n -c ${SBUILD_CHROOT} --extra-repository="${ISAR_APT_REPO}" \
         --host=${PACKAGE_ARCH} --build=${SBUILD_HOST_ARCH} \
         --starting-build-commands="runuser -u ${SCHROOT_USER} -- sh -c \"${SBUILD_PREBUILD:-:}\"" \
         --no-run-lintian --no-run-piuparts --no-run-autopkgtest \
         --build-dir=${WORKDIR} ${WORKDIR}/${PPS}
+
+    schroot_delete_configs
 }
