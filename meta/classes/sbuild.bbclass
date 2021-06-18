@@ -85,3 +85,16 @@ schroot_delete_configs() {
         rm -f "${SCHROOT_CONF_FILE}"
 EOSUDO
 }
+
+sbuild_export() {
+    SBUILD_CONFIG="${WORKDIR}/sbuild.conf"
+    VAR_LINE="'${1%%=*}' => '${1#*=}',"
+    if [ -s "${SBUILD_CONFIG}" ]; then
+        sed -i -e "\$i\\" -e "${VAR_LINE}" ${SBUILD_CONFIG}
+    else
+        echo "\$build_environment = {" > ${SBUILD_CONFIG}
+        echo "${VAR_LINE}" >> ${SBUILD_CONFIG}
+        echo "};" >> ${SBUILD_CONFIG}
+    fi
+    export SBUILD_CONFIG="${SBUILD_CONFIG}"
+}
