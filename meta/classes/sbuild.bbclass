@@ -15,8 +15,13 @@ python __anonymous() {
     if mode == "0" or d.getVar('HOST_ARCH') ==  distro_arch or \
        (d.getVar('HOST_DISTRO') == "debian-stretch" and distro_arch == "i386"):
         d.setVar('SBUILD_HOST_ARCH', distro_arch)
+        d.setVar('SCHROOT_DIR', d.getVar('SCHROOT_TARGET_DIR'))
+        dep = "sbuild-chroot-target:do_build"
     else:
         d.setVar('SBUILD_HOST_ARCH', d.getVar('HOST_ARCH'))
+        d.setVar('SCHROOT_DIR', d.getVar('SCHROOT_HOST_DIR'))
+        dep = "sbuild-chroot-host:do_build"
+    d.setVar('SCHROOT_DEP', dep)
 }
 
 SBUILD_CHROOT ?= "${DEBDISTRONAME}-${SCHROOT_USER}-${@os.getpid()}"
@@ -24,8 +29,6 @@ SBUILD_CHROOT_RW ?= "${SBUILD_CHROOT}-rw"
 
 SBUILD_CONF_DIR ?= "${SCHROOT_CONF}/${SBUILD_CHROOT}"
 SCHROOT_CONF_FILE ?= "${SCHROOT_CONF}/chroot.d/${SBUILD_CHROOT}"
-
-SCHROOT_DIR ?= "${DEPLOY_DIR_BOOTSTRAP}/${DISTRO}-${SBUILD_HOST_ARCH}"
 
 schroot_create_configs() {
     sudo -s <<'EOSUDO'

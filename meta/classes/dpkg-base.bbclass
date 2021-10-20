@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+inherit sbuild
 inherit buildchroot
 inherit debianize
 inherit terminal
@@ -213,6 +214,8 @@ python do_dpkg_build() {
 }
 
 addtask dpkg_build before do_build
+
+do_dpkg_build[depends] = "${SCHROOT_DEP}"
 
 KEEP_INSTALLED_ON_CLEAN ?= "0"
 
