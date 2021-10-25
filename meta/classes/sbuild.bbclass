@@ -155,3 +155,22 @@ schroot_run() {
     remove_mounts
     schroot_delete_configs
 }
+
+python do_sbuildshell() {
+    import sys
+
+    oe_lib_path = os.path.join(d.getVar('LAYERDIR_core'), 'lib')
+    sys.path.insert(0, oe_lib_path)
+
+    bb.build.exec_func('schroot_create_configs', d)
+
+    buildchroot = d.getVar('SBUILD_CHROOT')
+    rundir = "/"
+    termcmd = "schroot -d / -c {0} -u root -- sh -c 'cd {1}; $SHELL -i'"
+    oe_terminal(termcmd.format(buildchroot, rundir), "Isar devshell", d)
+
+    bb.build.exec_func('schroot_delete_configs', d)
+}
+
+addtask sbuildshell after do_prepare_build
+do_sbuildshell[nostamp] = "1"
