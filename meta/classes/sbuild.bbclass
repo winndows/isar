@@ -72,6 +72,8 @@ EOF
 
         fstab_isarapt="${DEPLOY_DIR}/isar-apt /isar-apt none rw,bind 0 0"
         grep -qxF "${fstab_isarapt}" ${sbuild_fstab} || echo "${fstab_isarapt}" >> ${sbuild_fstab}
+        fstab_baseapt="${REPO_BASE_DIR} /base-apt none rw,bind 0 0"
+        grep -qxF "${fstab_baseapt}" ${sbuild_fstab} || echo "${fstab_baseapt}" >> ${sbuild_fstab}
 
         if [ -d ${DL_DIR} ]; then
             fstab_downloads="${DL_DIR} /downloads none rw,bind 0 0"
@@ -107,11 +109,18 @@ sbuild_export() {
 schroot_install() {
     schroot_create_configs
     APTS="$1"
-    #TODO deb_dl_dir_import "${BUILDCHROOT_DIR}" "${distro}"
+
+    distro="${DISTRO}"
+    if [ ${ISAR_CROSS_COMPILE} -eq 1 ]; then
+       distro="${HOST_DISTRO}"
+    fi
+
+    deb_dl_dir_import ${SCHROOT_DIR} ${distro}
     schroot -d / -c ${SBUILD_CHROOT_RW} -u root -- \
         apt install -y -o Debug::pkgProblemResolver=yes \
                     --no-install-recommends --download-only ${APTS}
-    #TODO deb_dl_dir_export "${BUILDCHROOT_DIR}" "${distro}"
+    deb_dl_dir_export ${SCHROOT_DIR} ${distro}
+
     schroot -d / -c ${SBUILD_CHROOT_RW} -u root -- \
         apt install -y -o Debug::pkgProblemResolver=yes \
                     --no-install-recommends ${APTS}
