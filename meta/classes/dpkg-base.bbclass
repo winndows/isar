@@ -256,16 +256,16 @@ python do_devshell() {
     oe_lib_path = os.path.join(d.getVar('LAYERDIR_core'), 'lib')
     sys.path.insert(0, oe_lib_path)
 
-    bb.build.exec_func('dpkg_do_mounts', d)
+    bb.build.exec_func('schroot_create_configs', d)
 
     isar_export_proxies(d)
 
-    buildchroot = d.getVar('BUILDCHROOT_DIR')
+    schroot = d.getVar('SBUILD_CHROOT')
     pp_pps = os.path.join(d.getVar('PP'), d.getVar('PPS'))
-    termcmd = "sudo -E chroot {0} sh -c 'cd {1}; $SHELL -i'"
-    oe_terminal(termcmd.format(buildchroot, pp_pps), "Isar devshell", d)
+    termcmd = "schroot -d / -c {0} -u root -- sh -c 'cd {1}; $SHELL -i'"
+    oe_terminal(termcmd.format(schroot, pp_pps), "Isar devshell", d)
 
-    bb.build.exec_func('dpkg_undo_mounts', d)
+    bb.build.exec_func('schroot_delete_configs', d)
 }
 
 addtask devshell after do_prepare_build
