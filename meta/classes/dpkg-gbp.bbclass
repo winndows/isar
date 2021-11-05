@@ -12,10 +12,6 @@ PATCHTOOL ?= "git"
 GBP_DEPENDS ?= "git-buildpackage pristine-tar"
 GBP_EXTRA_OPTIONS ?= "--git-pristine-tar"
 
-do_install_builddeps_append() {
-    schroot_install "${GBP_DEPENDS}"
-}
-
 SCHROOT_MOUNTS = "${WORKDIR}:${PP} ${GITDIR}:/home/.git-downloads"
 
 dpkg_runbuild_prepend() {
