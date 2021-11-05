@@ -14,6 +14,8 @@ SBUILD_CHROOT_PREINSTALL_COMMON = " \
     fakeroot \
     build-essential \
     debhelper \
+    devscripts \
+    equivs \
 "
 
 SBUILD_CHROOT_PREINSTALL ?= " \
