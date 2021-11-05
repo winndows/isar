@@ -12,8 +12,6 @@ dpkg_runbuild() {
     E="${@ isar_export_proxies(d)}"
     export PARALLEL_MAKE="${PARALLEL_MAKE}"
 
-    schroot_create_configs
-
     distro="${DISTRO}"
     if [ ${ISAR_CROSS_COMPILE} -eq 1 ]; then
         distro="${HOST_DISTRO}"
@@ -40,6 +38,4 @@ dpkg_runbuild() {
         --build-dir=${WORKDIR} ${WORKDIR}/${PPS}
 
     deb_dl_dir_export "${WORKDIR}/rootfs" "${distro}"
-
-    schroot_delete_configs
 }

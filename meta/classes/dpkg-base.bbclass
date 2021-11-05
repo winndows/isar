@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: MIT
 
 inherit sbuild
-inherit buildchroot
 inherit debianize
 inherit terminal
 inherit repository
@@ -165,29 +164,7 @@ addtask prepare_build after do_patch do_transform_template before do_dpkg_build
 # deployed to isar-apt
 do_prepare_build[deptask] = "do_deploy_deb"
 
-BUILDROOT = "${BUILDCHROOT_DIR}/${PP}"
-
-dpkg_do_mounts() {
-    mkdir -p ${BUILDROOT}
-    sudo mount --bind ${WORKDIR} ${BUILDROOT}
-
-    buildchroot_do_mounts
-}
-
-dpkg_undo_mounts() {
-    i=0
-    while ! sudo umount ${BUILDROOT}; do
-        sleep 0.1
-        if [ `expr $i % 100` -eq 0 ] ; then
-            bbwarn "${BUILDROOT}: Couldn't unmount ($i), retrying..."
-        fi
-        if [ $i -ge 10000 ]; then
-            bbfatal "${BUILDROOT}: Couldn't unmount after timeout"
-        fi
-        i=`expr $i + 1`
-    done
-    sudo rmdir ${BUILDROOT}
-}
+do_prepare_build[depends] = "${SCHROOT_DEP}"
 
 do_prepare_build_append() {
     # Make a local copy of isar-apt repo that is not affected by other parallel builds
@@ -203,14 +180,11 @@ dpkg_runbuild() {
 }
 
 python do_dpkg_build() {
-    lock = bb.utils.lockfile(d.getVar("REPO_ISAR_DIR") + "/isar.lock",
-                             shared=True)
-    bb.build.exec_func("dpkg_do_mounts", d)
+    bb.build.exec_func('schroot_create_configs', d)
     try:
         bb.build.exec_func("dpkg_runbuild", d)
     finally:
-        bb.build.exec_func("dpkg_undo_mounts", d)
-        bb.utils.unlockfile(lock)
+        bb.build.exec_func('schroot_delete_configs', d)
 }
 
 addtask dpkg_build
@@ -242,8 +216,6 @@ do_dpkg_build_setscene[dirs] += "${S}/.."
 
 do_dpkg_build[depends] = "${SCHROOT_DEP}"
 
-KEEP_INSTALLED_ON_CLEAN ?= "0"
-
 CLEANFUNCS += "deb_clean"
 
 deb_clean() {
@@ -252,15 +224,6 @@ deb_clean() {
         for d in ${DEBS}; do
             repo_del_package "${REPO_ISAR_DIR}"/"${DISTRO}" \
                 "${REPO_ISAR_DB_DIR}"/"${DISTRO}" "${DEBDISTRONAME}" "${d}"
-            if [ "${KEEP_INSTALLED_ON_CLEAN}" = "1" ]; then
-                continue;
-            fi
-            package=$(basename "${d}")
-            package_remove="/usr/bin/apt-get remove -y ${package%%_*}"
-            sudo -E chroot ${BUILDCHROOT_DIR} ${package_remove} || true
-            if [ "${BUILDCHROOT_DIR}" != "${BUILDCHROOT_TARGET_DIR}" ]; then
-                    sudo -E chroot ${BUILDCHROOT_TARGET_DIR} ${package_remove} || true
-            fi
         done
     fi
 }
