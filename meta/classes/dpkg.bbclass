@@ -5,30 +5,7 @@ inherit dpkg-base
 
 PACKAGE_ARCH ?= "${DISTRO_ARCH}"
 
-# Install build dependencies for package
-do_install_builddeps() {
-    dpkg_do_mounts
-    E="${@ isar_export_proxies(d)}"
-    distro="${DISTRO}"
-    if [ ${ISAR_CROSS_COMPILE} -eq 1 ]; then
-       distro="${HOST_DISTRO}"
-    fi
-    deb_dl_dir_import "${BUILDCHROOT_DIR}" "${distro}"
-    sudo -E chroot ${BUILDCHROOT_DIR} /isar/deps.sh \
-        ${PP}/${PPS} ${PACKAGE_ARCH} --download-only
-    deb_dl_dir_export "${BUILDCHROOT_DIR}" "${distro}"
-    sudo -E chroot ${BUILDCHROOT_DIR} /isar/deps.sh \
-        ${PP}/${PPS} ${PACKAGE_ARCH}
-    dpkg_undo_mounts
-}
-
-addtask install_builddeps after do_prepare_build before do_dpkg_build
 do_install_builddeps[depends] += "isar-apt:do_cache_config"
-# apt and reprepro may not run in parallel, acquire the Isar lock
-do_install_builddeps[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
-
-addtask devshell after do_install_builddeps
-
 
 # Build package from sources using build script
 dpkg_runbuild() {
@@ -37,12 +14,32 @@ dpkg_runbuild() {
 
     schroot_create_configs
 
+    distro="${DISTRO}"
+    if [ ${ISAR_CROSS_COMPILE} -eq 1 ]; then
+        distro="${HOST_DISTRO}"
+    fi
+
+    deb_dl_dir_import "${WORKDIR}/rootfs" "${distro}"
+
+    deb_dir="/var/cache/apt/archives/"
+    ext_deb_dir="/home/builder/${PN}/rootfs/${deb_dir}"
+
+    ( flock 9
+        grep -qxF '$apt_keep_downloaded_packages = 1;' ${SCHROOT_USER_HOME}/.sbuildrc ||
+            echo '$apt_keep_downloaded_packages = 1;' >> ${SCHROOT_USER_HOME}/.sbuildrc
+    ) 9>"${TMPDIR}/sbuildrc.lock"
+
     sbuild -A -n -c ${SBUILD_CHROOT} --extra-repository="${ISAR_APT_REPO}" \
         --host=${PACKAGE_ARCH} --build=${SBUILD_HOST_ARCH} \
         --starting-build-commands="runuser -u ${SCHROOT_USER} -- sh -c \"${SBUILD_PREBUILD:-:}\"" \
         --no-run-lintian --no-run-piuparts --no-run-autopkgtest \
+        --chroot-setup-commands="cp -n --no-preserve=owner ${ext_deb_dir}/*.deb -t ${deb_dir}/ || :" \
+        --finished-build-commands="rm -f ${deb_dir}/sbuild-build-depends-main-dummy_*.deb" \
+        --finished-build-commands="cp -n --no-preserve=owner ${deb_dir}/*.deb -t ${ext_deb_dir}/ || :" \
         --debbuildopts="-d --source-option=-I" \
         --build-dir=${WORKDIR} ${WORKDIR}/${PPS}
+
+    deb_dl_dir_export "${WORKDIR}/rootfs" "${distro}"
 
     schroot_delete_configs
 }
