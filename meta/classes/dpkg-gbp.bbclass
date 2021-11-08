@@ -15,8 +15,10 @@ GBP_EXTRA_OPTIONS ?= "--git-pristine-tar"
 SCHROOT_MOUNTS = "${WORKDIR}:${PP} ${GITDIR}:/home/.git-downloads"
 
 dpkg_runbuild_prepend() {
-    schroot_run -d ${PP}/${PPS} -c ${SBUILD_CHROOT} -- \
+    sh -c "
+        cd ${WORKDIR}/${PPS}
         gbp buildpackage --git-builder=/bin/true ${GBP_EXTRA_OPTIONS}
+    "
     # NOTE: `buildpackage --git-builder=/bin/true --git-pristine-tar` is used
     # for compatibility with gbp version froms debian-stretch. In newer distros
     # it's possible to use a subcommand `export-orig --pristine-tar`

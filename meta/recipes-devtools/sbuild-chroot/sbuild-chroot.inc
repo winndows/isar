@@ -12,8 +12,6 @@ inherit rootfs
 
 SBUILD_CHROOT_PREINSTALL_COMMON = " \
     fakeroot \
-    git-buildpackage \
-    pristine-tar \
     build-essential \
     debhelper \
 "
