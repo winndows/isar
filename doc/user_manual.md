@@ -79,7 +79,9 @@ apt install \
   qemu \
   qemu-user-static \
   reprepro \
-  sudo
+  sudo \
+  git-buildpackage \
+  pristine-tar
 ```
 
 If your host is >= buster, also install the following package.
