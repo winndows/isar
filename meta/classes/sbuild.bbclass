@@ -70,8 +70,6 @@ EOF
         cp -rf "${SCHROOT_CONF}/sbuild" "${SBUILD_CONF_DIR}"
         sbuild_fstab="${SBUILD_CONF_DIR}/fstab"
 
-        fstab_isarapt="${DEPLOY_DIR}/isar-apt /isar-apt none rw,bind 0 0"
-        grep -qxF "${fstab_isarapt}" ${sbuild_fstab} || echo "${fstab_isarapt}" >> ${sbuild_fstab}
         fstab_baseapt="${REPO_BASE_DIR} /base-apt none rw,bind 0 0"
         grep -qxF "${fstab_baseapt}" ${sbuild_fstab} || echo "${fstab_baseapt}" >> ${sbuild_fstab}
 

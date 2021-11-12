@@ -5,7 +5,18 @@ inherit dpkg-base
 
 PACKAGE_ARCH ?= "${DISTRO_ARCH}"
 
-ISAR_APT_REPO ?= "deb [trusted=yes] file:///isar-apt/${DISTRO}-${DISTRO_ARCH}/apt/${DISTRO} ${DEBDISTRONAME} main"
+ISAR_APT_REPO ?= "deb [trusted=yes] file:///home/builder/${PN}/isar-apt/${DISTRO}-${DISTRO_ARCH}/apt/${DISTRO} ${DEBDISTRONAME} main"
+
+# Install build dependencies for package
+do_install_isarapt() {
+    # Make local copy of isar-apt not affected by other parallel tasks
+    mkdir -p ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}
+    rm -rf ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}/*
+    cp -Rl ${REPO_ISAR_DIR} ${WORKDIR}/isar-apt/${DISTRO}-${DISTRO_ARCH}
+}
+
+addtask install_isarapt after do_prepare_build before do_dpkg_build
+do_install_isarapt[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
 
 # Build package from sources using build script
 dpkg_runbuild() {
