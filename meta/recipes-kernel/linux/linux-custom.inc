@@ -122,9 +122,6 @@ do_prepare_build_prepend() {
 	rm -rf ${S}/debian
 	cp -r ${WORKDIR}/debian ${S}/
 
-	# remove templates from the source tree
-	find ${S}/debian -name *.tmpl | xargs rm -f
-
 	# rename install/remove hooks to match user-specified name for our linux-image package
 	mv ${S}/debian/linux-image.postinst ${S}/debian/linux-image-${KERNEL_NAME_PROVIDED}.postinst
 	mv ${S}/debian/linux-image.postrm ${S}/debian/linux-image-${KERNEL_NAME_PROVIDED}.postrm
