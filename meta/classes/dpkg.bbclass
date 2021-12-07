@@ -27,6 +27,10 @@ dpkg_runbuild() {
             echo '$apt_keep_downloaded_packages = 1;' >> ${SCHROOT_USER_HOME}/.sbuildrc
     ) 9>"${TMPDIR}/sbuildrc.lock"
 
+    if [ ${USE_CCACHE} -eq 1 ]; then
+        schroot_configure_ccache
+    fi
+
     sbuild -A -n -c ${SBUILD_CHROOT} --extra-repository="${ISAR_APT_REPO}" \
         --host=${PACKAGE_ARCH} --build=${SBUILD_HOST_ARCH} \
         --starting-build-commands="runuser -u ${SCHROOT_USER} -- sh -c \"${SBUILD_PREBUILD:-:}\"" \
