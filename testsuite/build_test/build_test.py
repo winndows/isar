@@ -135,6 +135,7 @@ class NoCrossTest(CIBaseTest):
             'mc:virtualbox-bullseye:isar-image-base',
             'mc:bananapi-bullseye:isar-image-base',
             'mc:nanopi-neo-bullseye:isar-image-base',
+            'mc:stm32mp15x-bullseye:isar-image-base',
             'mc:qemuamd64-focal:isar-image-base'
                   ]
 
@@ -150,6 +151,7 @@ class NoCrossTest(CIBaseTest):
             'mc:qemuarm-bookworm:isar-image-base',
             'mc:qemui386-bookworm:isar-image-base',
             'mc:qemumipsel-bookworm:isar-image-base',
+            'mc:stm32mp15x-bookworm:isar-image-base',
             'mc:hikey-bookworm:isar-image-base'
                   ]
 
